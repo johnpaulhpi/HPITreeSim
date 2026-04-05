@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axon CO2 Impact Calculator</title>
+    <style>
+        /* Enterprise Styling */
+        :root {
+            --primary-blue: #005A9C;
+            --light-blue: #E6F0F9;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --bg-color: #ffffff;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: transparent; 
+            color: var(--text-main);
+        }
+
+        .calculator-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        /* Title Block Styling */
+        .calculator-header {
+            text-align: center;
+            padding: 24px 20px 0px 20px;
+            background-color: var(--bg-color);
+        }
+
+        .calculator-header h2 {
+            margin: 0;
+            color: var(--primary-blue);
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        /* Top Visual Area */
+        .canvas-wrapper {
+            width: 100%;
+            height: 220px; /* Slightly taller for the tree */
+            display: block;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Content Area */
+        .content-section {
+            padding: 30px;
+        }
+
+        .explanation-block {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            margin-top: 0;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Sliders Layout */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 700px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .val-display {
+            color: var(--primary-blue);
+        }
+
+        /* Custom Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d3d3d3;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* The Interactive Paragraph */
+        .math-breakdown {
+            background-color: var(--light-blue);
+            padding: 20px;
+            border-left: 4px solid var(--primary-blue);
+            border-radius: 0 4px 4px 0;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-container">
+    <div class="calculator-header">
+        <h2>The Environmental Impact of "Plug-In Capacity"</h2>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="treeCanvas"></canvas>
+    </div>
+
+    <div class="content-section">
+        <p class="explanation-block">
+            When the Axon increases fiber capacity, it also replaces power-hungry hardware. Reducing the continuous power draw cuts massive amounts of CO2 emissions from the grid—acting as a digital forest for your infrastructure.
+        </p>
+
+        <div class="controls-grid">
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Axons Deployed</span>
+                    <span class="val-display" id="val-axons">10</span>
+                </div>
+                <input type="range" id="axons" min="1" max="500" value="10" step="1">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>SFPs Replaced per Axon</span>
+                    <span class="val-display" id="val-sfps">10</span>
+                </div>
+                <input type="range" id="sfps" min="1" max="50" value="10" step="1">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Power per SFP (Watts)</span>
+                    <span class="val-display" id="val-power">1.0 W</span>
+                </div>
+                <input type="range" id="power" min="0.5" max="15.0" value="1.0" step="0.1">
+            </div>
+        </div>
+
+        <div class="math-breakdown" id="output-paragraph">
+            </div>
+    </div>
+</div>
+
+<script>
+    // --- STATE & DOM ELEMENTS ---
+    const inputs = {
+        axons: document.getElementById('axons'),
+        sfps: document.getElementById('sfps'),
+        power: document.getElementById('power')
+    };
+
+    const displays = {
+        axons: document.getElementById('val-axons'),
+        sfps: document.getElementById('val-sfps'),
+        power: document.getElementById('val-power')
+    };
+
+    const outputParagraph = document.getElementById('output-paragraph');
+    const canvas = document.getElementById('treeCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Global variable for tree calculation
+    let currentTreesEquivalent = 0;
+
+    // --- MATH & UPDATE LOGIC ---
+    function calculateAndRender() {
+        const ax = parseFloat(inputs.axons.value);
+        const sfp = parseFloat(inputs.sfps.value);
+        const pwr = parseFloat(inputs.power.value);
+
+        // Update labels
+        displays.axons.innerText = ax.toLocaleString();
+        displays.sfps.innerText = sfp.toLocaleString();
+        displays.power.innerText = pwr.toFixed(1) + " W";
+
+        // Calculations
+        const totalSFPs = ax * sfp;
+        const annualEnergykWh = (totalSFPs * pwr / 1000) * 8760; // 8760 hours/year
+        const co2SavedLbs = annualEnergykWh * 0.85; // 0.85 lbs CO2 per kWh
+        const treesEquivalent = co2SavedLbs / 48; // 48 lbs CO2 absorbed per tree
+        
+        currentTreesEquivalent = treesEquivalent; 
+
+        // Update the Interactive Paragraph
+        outputParagraph.innerHTML = `
+            How we calculate this: <span class="highlight">${ax.toLocaleString()}</span> Axons replace 
+            <span class="highlight">${totalSFPs.toLocaleString()}</span> SFPs. At 
+            <span class="highlight">${pwr.toFixed(1)}W</span> each, running 24/7, that saves 
+            <span class="highlight">${Math.round(annualEnergykWh).toLocaleString()}</span> kWh of electricity annually. 
+            At standard US grid emission rates (0.85 lbs CO2/kWh), that eliminates 
+            <span class="highlight">${Math.round(co2SavedLbs).toLocaleString()}</span> pounds of CO2 per year. 
+            It would take <span class="highlight">${Math.round(treesEquivalent).toLocaleString()}</span> mature trees a full year to absorb that same amount of carbon.
+        `;
+
+        // Draw the static tree based on the new data
+        drawTree();
+    }
+
+    // Attach listeners to sliders
+    Object.values(inputs).forEach(input => {
+        input.addEventListener('input', calculateAndRender);
+    });
+
+    // --- CANVAS TREE DRAWING ---
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        drawTree();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function drawTree() {
+        // 1. Sky Background
+        ctx.fillStyle = '#E1F5FE'; // Soft sky blue
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Calculate growth scaling
+        // Max expected trees at highest slider values is ~58,190
+        const maxExpectedTrees = 60000; 
+        
+        // Use a logarithmic scale so the visual change is satisfying at both low and high numbers
+        const logIntensity = Math.log10(currentTreesEquivalent + 1) / Math.log10(maxExpectedTrees + 1);
+        
+        const centerX = canvas.width / 2;
+        const bottomY = canvas.height;
+
+        // 2. The Static Trunk
+        ctx.fillStyle = '#6D4C41'; // Deep wood brown
+        ctx.beginPath();
+        ctx.moveTo(centerX - 12, bottomY);
+        ctx.lineTo(centerX + 12, bottomY);
+        ctx.lineTo(centerX + 6, bottomY - 110);
+        ctx.lineTo(centerX - 6, bottomY - 110);
+        ctx.fill();
+
+        // 3. The Static Branches
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#6D4C41';
+        ctx.beginPath();
+        // Left branch
+        ctx.moveTo(centerX, bottomY - 60);
+        ctx.lineTo(centerX - 45, bottomY - 110);
+        // Right branch
+        ctx.moveTo(centerX, bottomY - 75);
+        ctx.lineTo(centerX + 45, bottomY - 125);
+        // Top extension
+        ctx.moveTo(centerX, bottomY - 110);
+        ctx.lineTo(centerX, bottomY - 140);
+        ctx.stroke();
+
+        // 4. The Dynamic Canopy (Green Orbs)
+        // Base radius ensures there is always a small tuft of leaves
+        const baseRadius = 20; 
+        // Growth factor scales the leaves up significantly as sliders increase
+        const growth = logIntensity * 65; 
+        const radius = baseRadius + growth;
+
+        ctx.fillStyle = 'rgba(67, 160, 71, 0.9)'; // Vibrant, slightly transparent forest green
+        
+        // Left Canopy Orb
+        ctx.beginPath();
+        ctx.arc(centerX - 45, bottomY - 110, radius * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Right Canopy Orb
+        ctx.beginPath();
+        ctx.arc(centerX + 45, bottomY - 125, radius * 0.85, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Center/Top Canopy Orb
+        ctx.beginPath();
+        ctx.arc(centerX, bottomY - 140, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Mid Canopy Orb (adds volume)
+        ctx.beginPath();
+        ctx.arc(centerX, bottomY - 95, radius * 0.75, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Initialize
+    resizeCanvas();
+    calculateAndRender();
+
+</script>
+</body>
+</html>
