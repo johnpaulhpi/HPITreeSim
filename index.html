@@ -235,7 +235,7 @@
         // Calculations
         const totalSFPs = ax * sfp;
         const annualEnergykWh = (totalSFPs * pwr / 1000) * 8760; // 8760 hours/year
-        const co2SavedLbs = annualEnergykWh * 0.85; // 0.85 lbs CO2 per kWh
+        const co2SavedLbs = annualEnergykWh * 0.81; // 0.81 lbs CO2 per kWh
         const treesEquivalent = co2SavedLbs / 48; // 48 lbs CO2 absorbed per tree
         
         currentTreesEquivalent = treesEquivalent; 
@@ -246,7 +246,7 @@
             <span class="highlight">${totalSFPs.toLocaleString()}</span> SFPs. At 
             <span class="highlight">${pwr.toFixed(1)}W</span> each, running 24/7, that saves 
             <span class="highlight">${Math.round(annualEnergykWh).toLocaleString()}</span> kWh of electricity annually. 
-            At standard US grid emission rates (0.85 lbs CO2/kWh), that eliminates 
+            At standard US grid emission rates (0.81 lbs CO2/kWh), that eliminates 
             <span class="highlight">${Math.round(co2SavedLbs).toLocaleString()}</span> pounds of CO2 per year. 
             It would take <span class="highlight">${Math.round(treesEquivalent).toLocaleString()}</span> mature trees a full year to absorb that same amount of carbon.
         `;
