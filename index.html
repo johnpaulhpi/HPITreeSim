@@ -77,7 +77,7 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        /* Sliders Layout - Updated to 2x2 for balance */
+        /* Sliders Layout - 2x2 for balance */
         .controls-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -166,7 +166,7 @@
 
     <div class="content-section">
         <p class="explanation-block">
-            When the Axon increases fiber capacity, it also replaces power-hungry hardware. Reducing the continuous power draw cuts massive amounts of CO2 emissions from the grid—acting as a "digital forest" for your infrastructure.
+            When the Axon increases fiber capacity, it also replaces power-hungry hardware. Reducing the continuous power draw cuts massive amounts of CO2 emissions from the grid.
         </p>
 
         <div class="controls-grid">
@@ -246,11 +246,39 @@
 
         // Calculations
         const totalSFPs = ax * sfp;
-        const annualEnergykWh = (totalSFPs * pwr / 1000) * 8760; // 8760 hours/year
+        const annualEnergykWh = (totalSFPs * pwr / 1000) * 8760; 
         const co2SavedLbs = annualEnergykWh * gridRate; 
         const treesEquivalent = co2SavedLbs / 48; // 48 lbs CO2 absorbed per tree
         
         currentTreesEquivalent = treesEquivalent; 
+
+        // Dynamic Forest Comparison Logic (PNW Centric)
+        let targetForest = "";
+        let location = "";
+        let divisor = 1;
+
+        if (treesEquivalent < 2500) {
+            targetForest = "the Grove of the Patriarchs";
+            location = "Mount Rainier";
+            divisor = 500;
+        } else if (treesEquivalent < 15000) {
+            targetForest = "Squaxin Park";
+            location = "Olympia";
+            divisor = 5000;
+        } else if (treesEquivalent < 75000) {
+            targetForest = "Point Defiance Park";
+            location = "Tacoma";
+            divisor = 25000;
+        } else {
+            targetForest = "the Hoh Rain Forest";
+            location = "Olympic National Park";
+            divisor = 100000;
+        }
+
+        const multiplier = (treesEquivalent / divisor).toFixed(1);
+        const forestSentence = treesEquivalent >= 1 
+            ? `<br><br>For perspective, this many trees is equal to <strong>${multiplier}x</strong> the footprint of <strong>${targetForest}</strong> in <strong>${location}</strong>.` 
+            : "";
 
         // Update the Interactive Paragraph
         outputParagraph.innerHTML = `
@@ -260,7 +288,7 @@
             <span class="highlight">${Math.round(annualEnergykWh).toLocaleString()}</span> kWh of electricity annually. 
             At a grid emission rate of <span class="highlight">${gridRate.toFixed(2)} lbs CO2/kWh</span>, that eliminates 
             <span class="highlight">${Math.round(co2SavedLbs).toLocaleString()}</span> pounds of CO2 per year. 
-            It would take <span class="highlight">${Math.round(treesEquivalent).toLocaleString()}</span> mature trees a full year to absorb that same amount of carbon.
+            It would take <span class="highlight">${Math.round(treesEquivalent).toLocaleString()}</span> mature trees a full year to absorb that same amount of carbon.${forestSentence}
         `;
 
         // Draw the static tree based on the new data
@@ -282,21 +310,19 @@
 
     function drawTree() {
         // 1. Sky Background
-        ctx.fillStyle = '#E1F5FE'; // Soft sky blue
+        ctx.fillStyle = '#E1F5FE'; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Calculate growth scaling
-        // Max expected trees at highest slider values is roughly ~160,000 depending on grid rate
         const maxExpectedTrees = 160000; 
         
-        // Use a logarithmic scale so the visual change is satisfying at both low and high numbers
         const logIntensity = Math.log10(currentTreesEquivalent + 1) / Math.log10(maxExpectedTrees + 1);
         
         const centerX = canvas.width / 2;
         const bottomY = canvas.height;
 
         // 2. The Static Trunk
-        ctx.fillStyle = '#6D4C41'; // Deep wood brown
+        ctx.fillStyle = '#6D4C41'; 
         ctx.beginPath();
         ctx.moveTo(centerX - 12, bottomY);
         ctx.lineTo(centerX + 12, bottomY);
@@ -308,42 +334,33 @@
         ctx.lineWidth = 5;
         ctx.strokeStyle = '#6D4C41';
         ctx.beginPath();
-        // Left branch
         ctx.moveTo(centerX, bottomY - 60);
         ctx.lineTo(centerX - 45, bottomY - 110);
-        // Right branch
         ctx.moveTo(centerX, bottomY - 75);
         ctx.lineTo(centerX + 45, bottomY - 125);
-        // Top extension
         ctx.moveTo(centerX, bottomY - 110);
         ctx.lineTo(centerX, bottomY - 140);
         ctx.stroke();
 
-        // 4. The Dynamic Canopy (Green Orbs)
-        // Base radius ensures there is always a small tuft of leaves
+        // 4. The Dynamic Canopy
         const baseRadius = 20; 
-        // Growth factor scales the leaves up significantly as sliders increase
         const growth = logIntensity * 65; 
         const radius = baseRadius + growth;
 
-        ctx.fillStyle = 'rgba(67, 160, 71, 0.9)'; // Vibrant, slightly transparent forest green
+        ctx.fillStyle = 'rgba(67, 160, 71, 0.9)'; 
         
-        // Left Canopy Orb
         ctx.beginPath();
         ctx.arc(centerX - 45, bottomY - 110, radius * 0.9, 0, Math.PI * 2);
         ctx.fill();
 
-        // Right Canopy Orb
         ctx.beginPath();
         ctx.arc(centerX + 45, bottomY - 125, radius * 0.85, 0, Math.PI * 2);
         ctx.fill();
         
-        // Center/Top Canopy Orb
         ctx.beginPath();
         ctx.arc(centerX, bottomY - 140, radius, 0, Math.PI * 2);
         ctx.fill();
         
-        // Mid Canopy Orb (adds volume)
         ctx.beginPath();
         ctx.arc(centerX, bottomY - 95, radius * 0.75, 0, Math.PI * 2);
         ctx.fill();
