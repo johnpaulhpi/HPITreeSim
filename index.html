@@ -51,7 +51,7 @@
         /* Top Visual Area */
         .canvas-wrapper {
             width: 100%;
-            height: 220px; /* Slightly taller for the tree */
+            height: 220px;
             display: block;
             border-bottom: 1px solid var(--border-color);
         }
@@ -77,10 +77,10 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        /* Sliders Layout */
+        /* Sliders Layout - Updated to 2x2 for balance */
         .controls-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 24px;
             margin-bottom: 30px;
         }
@@ -193,10 +193,18 @@
                 </div>
                 <input type="range" id="power" min="0.5" max="15.0" value="1.0" step="0.1">
             </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Grid Emissions (lbs CO2/kWh)</span>
+                    <span class="val-display" id="val-grid">0.81</span>
+                </div>
+                <input type="range" id="grid" min="0.0" max="3.0" value="0.81" step="0.01">
+            </div>
         </div>
 
         <div class="math-breakdown" id="output-paragraph">
-            </div>
+        </div>
     </div>
 </div>
 
@@ -205,13 +213,15 @@
     const inputs = {
         axons: document.getElementById('axons'),
         sfps: document.getElementById('sfps'),
-        power: document.getElementById('power')
+        power: document.getElementById('power'),
+        grid: document.getElementById('grid')
     };
 
     const displays = {
         axons: document.getElementById('val-axons'),
         sfps: document.getElementById('val-sfps'),
-        power: document.getElementById('val-power')
+        power: document.getElementById('val-power'),
+        grid: document.getElementById('val-grid')
     };
 
     const outputParagraph = document.getElementById('output-paragraph');
@@ -226,16 +236,18 @@
         const ax = parseFloat(inputs.axons.value);
         const sfp = parseFloat(inputs.sfps.value);
         const pwr = parseFloat(inputs.power.value);
+        const gridRate = parseFloat(inputs.grid.value);
 
         // Update labels
         displays.axons.innerText = ax.toLocaleString();
         displays.sfps.innerText = sfp.toLocaleString();
         displays.power.innerText = pwr.toFixed(1) + " W";
+        displays.grid.innerText = gridRate.toFixed(2);
 
         // Calculations
         const totalSFPs = ax * sfp;
         const annualEnergykWh = (totalSFPs * pwr / 1000) * 8760; // 8760 hours/year
-        const co2SavedLbs = annualEnergykWh * 0.81; // 0.81 lbs CO2 per kWh
+        const co2SavedLbs = annualEnergykWh * gridRate; 
         const treesEquivalent = co2SavedLbs / 48; // 48 lbs CO2 absorbed per tree
         
         currentTreesEquivalent = treesEquivalent; 
@@ -246,7 +258,7 @@
             <span class="highlight">${totalSFPs.toLocaleString()}</span> SFPs. At 
             <span class="highlight">${pwr.toFixed(1)}W</span> each, running 24/7, that saves 
             <span class="highlight">${Math.round(annualEnergykWh).toLocaleString()}</span> kWh of electricity annually. 
-            At standard US grid emission rates (0.81 lbs CO2/kWh), that eliminates 
+            At a grid emission rate of <span class="highlight">${gridRate.toFixed(2)} lbs CO2/kWh</span>, that eliminates 
             <span class="highlight">${Math.round(co2SavedLbs).toLocaleString()}</span> pounds of CO2 per year. 
             It would take <span class="highlight">${Math.round(treesEquivalent).toLocaleString()}</span> mature trees a full year to absorb that same amount of carbon.
         `;
@@ -274,8 +286,8 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Calculate growth scaling
-        // Max expected trees at highest slider values is ~58,190
-        const maxExpectedTrees = 60000; 
+        // Max expected trees at highest slider values is roughly ~160,000 depending on grid rate
+        const maxExpectedTrees = 160000; 
         
         // Use a logarithmic scale so the visual change is satisfying at both low and high numbers
         const logIntensity = Math.log10(currentTreesEquivalent + 1) / Math.log10(maxExpectedTrees + 1);
